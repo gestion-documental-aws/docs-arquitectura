@@ -1,0 +1,299 @@
+{
+	"info": {
+		"_postman_id": "7a3512be-00b8-4d53-a3d8-cf49fb2a4c8d",
+		"name": "Gestión Documental API",
+		"description": "Colección de endpoints para el microservicio de Gestión Documental. Cumple con la estandarización de Request/Response, la seguridad estricta OAuth 2.0 (Cognito Client Credentials) y los Feature Flags (Cero Bloqueos).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Autenticación",
+			"item": [
+				{
+					"name": "Obtener Token de Acceso (Cognito)",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{clientId}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{clientSecret}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{tokenUrl}}",
+							"host": [
+								"{{tokenUrl}}"
+							]
+						},
+						"description": "Llamada al endpoint de Cognito OAuth 2.0 para obtener el Access Token usando las credenciales del cliente."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Documentos",
+			"item": [
+				{
+					"name": "Generar URL Pre-firmada de Subida",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-mock-data",
+								"value": "false",
+								"description": "Feature Flag: cambiar a 'true' para obtener mock data.",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"file_name\": \"reporte_anual_2026.pdf\",\n    \"description\": \"Reporte anual de rendimiento\",\n    \"observations\": \"Revisión final\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/documents/presigned",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								"presigned"
+							],
+							"query": [
+								{
+									"key": "mock",
+									"value": "false",
+									"description": "Feature Flag: cambiar a 'true' para mock data en query parameter.",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirmar Subida de Documento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "x-mock-data",
+								"value": "false",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"document_id\": \"{{documentId}}\",\n    \"file_name\": \"reporte_anual_2026.pdf\",\n    \"s3_key\": \"documents/{{documentId}}-reporte_anual_2026.pdf\",\n    \"description\": \"Reporte anual de rendimiento\",\n    \"observations\": \"Revisión final\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/upload",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"upload"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Documentos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-data",
+								"value": "false",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/documents",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Enlace de Descarga",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-data",
+								"value": "false",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/documents/{{documentId}}/download",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								"{{documentId}}",
+								"download"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Documento",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "x-mock-data",
+								"value": "false",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/documents/{{documentId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"documents",
+								"{{documentId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Obtener Estadísticas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "x-mock-data",
+								"value": "false",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"dashboard"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{accessToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://gd-jsp-v6-api.dev.execute-api.us-west-1.amazonaws.com/dev",
+			"type": "string"
+		},
+		{
+			"key": "tokenUrl",
+			"value": "https://gd-jsp-v6.auth.us-west-1.amazoncognito.com/oauth2/token",
+			"type": "string"
+		},
+		{
+			"key": "clientId",
+			"value": "tu_client_id_aqui",
+			"type": "string"
+		},
+		{
+			"key": "clientSecret",
+			"value": "tu_client_secret_aqui",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "tu_token_jwt_aqui",
+			"type": "string"
+		},
+		{
+			"key": "documentId",
+			"value": "mock-uuid-1",
+			"type": "string"
+		}
+	]
+}

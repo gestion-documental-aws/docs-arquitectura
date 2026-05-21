@@ -1,0 +1,430 @@
+openapi: 3.0.0
+info:
+  title: Sistema de Gestión Documental (Document Management System API)
+  description: |
+    API para la gestión de documentos en la nube, incluyendo generación de URLs pre-firmadas para subidas/descargas, 
+    listados, borrados y estadísticas del dashboard.
+    
+    ### Estándar JSON Obligatorio
+    - **Peticiones (Requests)**: El cuerpo debe encapsularse únicamente dentro del campo `data`.
+    - **Respuestas (Success / Error)**: Todas las respuestas siguen la estructura `{ success, code, data }`.
+    
+    ### Autenticación y Seguridad
+    - Tipo: OAuth 2.0 (Flujo de Client Credentials / Amazon Cognito)
+    - Header requerido: `Authorization: Bearer <JWT_TOKEN>`
+    
+    ### Feature Flags (Cero Bloqueos)
+    - Para probar con datos simulados (Mock Data), agregue el header `x-mock-data: true`, el query parameter `?mock=true` o configure la variable de entorno `MOCK_DATA=true`.
+  version: 1.0.0
+servers:
+  - url: https://gd-jsp-v6-api.dev.execute-api.us-west-1.amazonaws.com/dev
+    description: Servidor de Desarrollo (API Gateway)
+paths:
+  /documents/presigned:
+    post:
+      summary: Generar URL pre-firmada para subir un archivo
+      description: Registra temporalmente un documento y genera una URL de S3 pre-firmada para que el cliente pueda realizar la subida directa.
+      security:
+        - CognitoOAuth2: []
+      parameters:
+        - $ref: '#/components/parameters/MockHeader'
+        - $ref: '#/components/parameters/MockQuery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: object
+                  required:
+                    - file_name
+                  properties:
+                    file_name:
+                      type: string
+                      example: reporte_ventas_2026.pdf
+                    description:
+                      type: string
+                      example: Reporte mensual de ventas del negocio
+                    observations:
+                      type: string
+                      example: Revisar sección de totales
+      responses:
+        '200':
+          description: Respuesta exitosa con URL pre-firmada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponsePresigned'
+        '400':
+          description: Petición inválida (falta de parámetros obligatorios)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: No autorizado (Token faltante o expirado)
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /upload:
+    post:
+      summary: Confirmar subida de documento
+      description: Guarda o confirma los detalles del documento subido a S3 en la base de datos de DynamoDB.
+      security:
+        - CognitoOAuth2: []
+      parameters:
+        - $ref: '#/components/parameters/MockHeader'
+        - $ref: '#/components/parameters/MockQuery'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: object
+                  required:
+                    - document_id
+                    - file_name
+                    - s3_key
+                  properties:
+                    document_id:
+                      type: string
+                      example: mock-uuid-12345
+                    file_name:
+                      type: string
+                      example: reporte_ventas_2026.pdf
+                    s3_key:
+                      type: string
+                      example: documents/mock-uuid-12345-reporte_ventas_2026.pdf
+                    description:
+                      type: string
+                      example: Reporte de ventas
+                    observations:
+                      type: string
+                      example: N/A
+      responses:
+        '200':
+          description: Documento confirmado con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseMessage'
+        '400':
+          description: Parámetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents:
+    get:
+      summary: Listar documentos del usuario
+      description: Recupera el listado de todos los documentos subidos por el usuario actual (identificado por su Token).
+      security:
+        - CognitoOAuth2: []
+      parameters:
+        - $ref: '#/components/parameters/MockHeader'
+        - $ref: '#/components/parameters/MockQuery'
+      responses:
+        '200':
+          description: Listado obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseList'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{document_id}/download:
+    get:
+      summary: Obtener enlace de descarga de un documento
+      description: Valida la propiedad del documento y genera una URL de S3 pre-firmada con vigencia de 5 minutos para su descarga segura.
+      security:
+        - CognitoOAuth2: []
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: mock-uuid-1
+        - $ref: '#/components/parameters/MockHeader'
+        - $ref: '#/components/parameters/MockQuery'
+      responses:
+        '200':
+          description: URL de descarga generada con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseDownload'
+        '403':
+          description: Acceso denegado (El documento no le pertenece al usuario)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Documento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{document_id}:
+    delete:
+      summary: Eliminar un documento
+      description: Elimina el registro del documento en DynamoDB y su archivo físico almacenado en S3.
+      security:
+        - CognitoOAuth2: []
+      parameters:
+        - name: document_id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: mock-uuid-1
+        - $ref: '#/components/parameters/MockHeader'
+        - $ref: '#/components/parameters/MockQuery'
+      responses:
+        '200':
+          description: Documento eliminado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseMessage'
+        '403':
+          description: Acceso denegado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Documento no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard:
+    get:
+      summary: Estadísticas del dashboard de documentos
+      description: Retorna métricas generales agregadas del usuario, clasificadas por estado de procesamiento (uploaded, processing, processed, failed).
+      security:
+        - CognitoOAuth2: []
+      parameters:
+        - $ref: '#/components/parameters/MockHeader'
+        - $ref: '#/components/parameters/MockQuery'
+      responses:
+        '200':
+          description: Estadísticas obtenidas con éxito
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponseDashboard'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    CognitoOAuth2:
+      type: oauth2
+      description: Flujo de OAuth 2.0 Client Credentials de Amazon Cognito.
+      flows:
+        clientCredentials:
+          tokenUrl: https://gd-jsp-v6.auth.us-west-1.amazoncognito.com/oauth2/token
+          scopes: {}
+  parameters:
+    MockHeader:
+      name: x-mock-data
+      in: header
+      required: false
+      description: Feature Flag. Envíe 'true' para forzar que el endpoint retorne respuestas con Mock Data simulada.
+      schema:
+        type: string
+        enum: ['true', 'false']
+        default: 'false'
+    MockQuery:
+      name: mock
+      in: query
+      required: false
+      description: Feature Flag. Envíe 'true' para forzar que el endpoint retorne respuestas con Mock Data simulada.
+      schema:
+        type: string
+        enum: ['true', 'false']
+        default: 'false'
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        code:
+          type: integer
+          example: 400
+        data:
+          type: object
+          properties:
+            error:
+              type: string
+              example: Error descriptivo del fallo
+    SuccessResponseMessage:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            message:
+              type: string
+              example: Operación realizada con éxito
+    SuccessResponsePresigned:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            upload_url:
+              type: string
+              example: https://gd-documents-jsp-v6-2026.s3.amazonaws.com/documents/mock-uuid-file.pdf?AWSAccessKeyId=MOCK&Expires=1700000000&Signature=MOCK
+            s3_key:
+              type: string
+              example: documents/mock-uuid-file.pdf
+            document_id:
+              type: string
+              example: mock-uuid-12345
+    SuccessResponseDownload:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            download_url:
+              type: string
+              example: https://gd-documents-jsp-v6-2026.s3.amazonaws.com/documents/mock-uuid-file.pdf?AWSAccessKeyId=MOCK&Expires=1700000000&Signature=MOCK
+            file_name:
+              type: string
+              example: reporte_ventas_2026.pdf
+    SuccessResponseDashboard:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            total_documents:
+              type: integer
+              example: 15
+            uploaded:
+              type: integer
+              example: 2
+            processing:
+              type: integer
+              example: 3
+            processed:
+              type: integer
+              example: 9
+            failed:
+              type: integer
+              example: 1
+    SuccessResponseList:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        code:
+          type: integer
+          example: 200
+        data:
+          type: object
+          properties:
+            documents:
+              type: array
+              items:
+                type: object
+                properties:
+                  document_id:
+                    type: string
+                    example: mock-uuid-1
+                  file_name:
+                    type: string
+                    example: reporte_ventas_2026.pdf
+                  description:
+                    type: string
+                    example: Reporte de ventas
+                  observations:
+                    type: string
+                    example: Revisado
+                  uploaded_by:
+                    type: string
+                    example: mock-user-123
+                  upload_date:
+                    type: string
+                    example: '2026-05-20T20:00:00.000Z'
+                  status:
+                    type: string
+                    example: processed
+                  s3_key:
+                    type: string
+                    example: documents/mock-uuid-1.pdf
