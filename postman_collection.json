@@ -232,6 +232,47 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Facturas",
+			"item": [
+				{
+					"name": "Generar Factura en PDF",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"data\": {\n    \"invoice_number\": \"TR-99081\",\n    \"client_name\": \"Empresa Distribuidora ABC\",\n    \"date\": \"2026-05-24\",\n    \"items\": [\n      {\n        \"description\": \"Desarrollo de Software Integrado\",\n        \"quantity\": 1,\n        \"price\": 2500.00\n      },\n      {\n        \"description\": \"Soporte de Servidores Dedicados\",\n        \"quantity\": 3,\n        \"price\": 150.00\n      }\n    ]\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/invoices",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"invoices"
+							]
+						},
+						"description": "Crea una factura comercial en PDF, la sube a S3 y la registra en DynamoDB. Utiliza el estándar obligatorio de datos encapsulados dentro de 'data'."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"auth": {

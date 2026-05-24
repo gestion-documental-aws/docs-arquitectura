@@ -143,11 +143,31 @@ sequenceDiagram
     Cliente->>API: GET /documents/{document_id}/download
     Note over API: Extrae ID de usuario desde JWT Claims
     API->>DB: Consulta dueño del document_id
-    alt Es propietario
+    alt Es propietario u objeto público/factura
         API->>S3: Genera URL pre-firmada de lectura (GET) con vigencia de 5 minutos
         API->>Cliente: Retorna { download_url, file_name }
         Cliente->>S3: Descarga el archivo usando download_url
-    else No es propietario
+    else Acceso denegado
         API->>Cliente: Retorna error 403 (Acceso denegado)
     end
 ```
+
+### 4.3 Flujo de Generación de Facturas (Integración Externa)
+Permite a sistemas integradores de otros equipos (como e-commerce) generar facturas en PDF enviando la información estructurada en JSON:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Socio as Integrador Externo (E-commerce)
+    participant API as API Gateway / Lambda Invoices
+    participant S3 as Amazon S3 Bucket (invoices/)
+    participant DB as DynamoDB
+
+    Socio->>API: POST /invoices { data: { invoice_number, client_name, date, items, [total] } }
+    Note over API: Valida datos y calcula total si es necesario
+    Note over API: Genera PDF formateado de la factura en memoria (FPDF2)
+    API->>S3: PUT invoices/invoice_{invoice_number}.pdf
+    API->>DB: Registra metadatos (uploaded_by = "api-colleague", status = "processed")
+    API->>Socio: Retorna { success: true, data: { message, document_id, s3_key, file_name, total } }
+```
+
