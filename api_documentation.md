@@ -236,3 +236,10 @@ Para realizar pruebas directas o consumir la infraestructura desplegada, utilice
 *   **Amazon S3 Bucket:** `document-system-dev-documents` (con prefijos `documents/` e `invoices/`)
 *   **Amazon SQS Queue:** `document-system-dev-queue`
 *   **Amazon SQS DLQ:** `document-system-dev-dlq`
+
+### 7.4 Diseño de Perfiles de Usuario (Single-Table Design)
+Para optimizar el uso de recursos y evitar cargos innecesarios de múltiples tablas o redirecciones en API Gateway, los perfiles de usuario se almacenan dentro de la misma tabla principal `document-system-dev-documents` utilizando el patrón **Single-Table Design**:
+*   **Identificador único (`document_id`):** `profile_<USERNAME>` (por ejemplo, `profile_santi`).
+*   **Consultas:**
+    *   **Guardar/Actualizar:** Se utiliza el endpoint `POST /upload` enviando los campos `full_name`, `company`, `position`, `area` y el campo de control `"type": "profile"`.
+    *   **Cargar:** Se realiza una llamada a `GET /documents?type=profile`, devolviendo directamente los atributos del perfil sin exponerlos en el listado de documentos normales.
