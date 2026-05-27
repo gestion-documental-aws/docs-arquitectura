@@ -17,7 +17,7 @@ info:
     - Para probar con datos simulados (Mock Data), agregue el header `x-mock-data: true`, el query parameter `?mock=true` o configure la variable de entorno `MOCK_DATA=true`.
   version: 1.0.0
 servers:
-  - url: https://gd-jsp-v6-api.dev.execute-api.us-west-1.amazonaws.com/dev
+  - url: https://spljt9ppl5.execute-api.us-west-2.amazonaws.com/dev
     description: Servidor de Desarrollo (API Gateway)
 paths:
   /documents/presigned:
@@ -342,7 +342,7 @@ components:
       description: Flujo de OAuth 2.0 Client Credentials de Amazon Cognito.
       flows:
         clientCredentials:
-          tokenUrl: https://gd-jsp-v6.auth.us-west-1.amazoncognito.com/oauth2/token
+          tokenUrl: https://gd-jsp-v6-auth.auth.us-west-2.amazoncognito.com/oauth2/token
           scopes: {}
   parameters:
     MockHeader:

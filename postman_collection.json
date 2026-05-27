@@ -308,22 +308,22 @@
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "https://gd-jsp-v6-api.dev.execute-api.us-west-1.amazonaws.com/dev",
+			"value": "https://spljt9ppl5.execute-api.us-west-2.amazonaws.com/dev",
 			"type": "string"
 		},
 		{
 			"key": "tokenUrl",
-			"value": "https://gd-jsp-v6.auth.us-west-1.amazoncognito.com/oauth2/token",
+			"value": "https://gd-jsp-v6-auth.auth.us-west-2.amazoncognito.com/oauth2/token",
 			"type": "string"
 		},
 		{
 			"key": "clientId",
-			"value": "tu_client_id_aqui",
+			"value": "1u5tlcvmaegt93ajfebjndn2g7",
 			"type": "string"
 		},
 		{
 			"key": "clientSecret",
-			"value": "tu_client_secret_aqui",
+			"value": "1298pg7ue9nd77k8e6votv6tmukrd01jn09rkc0q49haanr7vd00",
 			"type": "string"
 		},
 		{

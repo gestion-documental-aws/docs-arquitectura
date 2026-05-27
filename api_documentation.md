@@ -56,22 +56,23 @@ La seguridad cumple con estándares estrictos tipo pasarela bancaria. La comunic
 ### 2.1 Obtención del Token de Acceso
 Cada servicio cliente debe autenticarse contra el endpoint de Cognito utilizando su `client_id` y `client_secret` asignados:
 
-*   **Endpoint de Cognito (Token URL)**: `https://gd-jsp-v6.auth.us-west-1.amazoncognito.com/oauth2/token`
+*   **Endpoint de Cognito (Token URL)**: `https://gd-jsp-v6-auth.auth.us-west-2.amazoncognito.com/oauth2/token`
 *   **Método HTTP**: `POST`
 *   **Headers**:
     *   `Content-Type: application/x-www-form-urlencoded`
 *   **Cuerpo (URL Encoded)**:
     ```
     grant_type=client_credentials
-    &client_id=TU_CLIENT_ID
-    &client_secret=TU_CLIENT_SECRET
+    &client_id=1u5tlcvmaegt93ajfebjndn2g7
+    &client_secret=1298pg7ue9nd77k8e6votv6tmukrd01jn09rkc0q49haanr7vd00
+    &scope=https://api.document-system.com/invoices:create
     ```
 
 #### Ejemplo de Petición con cURL
 ```bash
-curl -X POST https://gd-jsp-v6.auth.us-west-1.amazoncognito.com/oauth2/token \
+curl -X POST https://gd-jsp-v6-auth.auth.us-west-2.amazoncognito.com/oauth2/token \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=client_credentials&client_id=TU_CLIENT_ID&client_secret=TU_CLIENT_SECRET"
+  -d "grant_type=client_credentials&client_id=1u5tlcvmaegt93ajfebjndn2g7&client_secret=1298pg7ue9nd77k8e6votv6tmukrd01jn09rkc0q49haanr7vd00&scope=https://api.document-system.com/invoices:create"
 ```
 
 #### Respuesta de Cognito (Token de Acceso)
